@@ -23,13 +23,14 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-mongoose.connect("mongodb://localhost:27017/userDB");
+// mongoose.connect("mongodb://localhost:27017/userDB");
+mongoose.connect("mongodb+srv://admin-satyam:test123@cluster0.zqkpt.mongodb.net/userDB");
 
 const  userSchema = new mongoose.Schema({
     email : String,
     password : String,
     googleId : String,
-    secret: String
+    secret: []
 });
 
 // for encryption 
@@ -56,7 +57,7 @@ passport.use(new GoogleStrategy({
     userProfileURL : "https://www.googleapis.com/oauth2/v3/userinfo"
   },
   function(accessToken, refreshToken, profile, cb) {
-      console.log(profile);
+    //   console.log(profile);
     User.findOrCreate({ googleId: profile.id }, function (err, user) {
       return cb(err, user);
     });
@@ -100,6 +101,7 @@ app.get("/secrets",function(req,res){
 })
 
 app.get("/submit",function(req,res){
+    console.log(req.user);
     if(req.isAuthenticated()){
         res.render("submit");
     }
@@ -110,12 +112,14 @@ app.get("/submit",function(req,res){
 app.post("/submit",function(req,res){
     const submittedSeceret = req.body.secret;
     User.findById(req.user.id , function(err,foundUser){
+        // console.log(foundUser);
        if(err){
            console.log(err);
        }
        else{
            if(foundUser){
-               foundUser.secret = submittedSeceret;
+               console.log(submittedSeceret);
+               foundUser.secret.push(submittedSeceret)
                foundUser.save(function(){
                    res.redirect("/secrets");
                })
@@ -137,6 +141,7 @@ app.post("/register",function(req,res){
        res.redirect("/register");
    }     else{
        passport.authenticate("local")(req,res,function(){
+        //    console.log(user);
            res.redirect("/secrets");
        })
    }
@@ -154,6 +159,7 @@ app.post("/login",function(req,res){
         console.log(err);
         }
         else{
+            // console.log(user);
             passport.authenticate("local")(req,res,function(){
             res.redirect("/secrets");
             })
